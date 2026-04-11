@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Environment (keep .env.example tracked)
+.env
+.env.*
+
+# Tooling / caches
+*.tsbuildinfo
+node_modules/.tmp
+coverage
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
