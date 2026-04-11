@@ -5,7 +5,8 @@ It helps owners and managers track sales, expenses, fund movements, and reports 
 
 ## 1) Project Title and Description
 
-**Cafe ERP** is a single-page frontend application for cafe finance and operational visibility.
+**Cafe ERP** is a **single-page application (SPA)**: one HTML shell loads once, and React Router (`BrowserRouter`) handles navigation client-side under routes like `/dashboard/*`. There is no full page reload when moving between dashboard screens.
+
 The app supports both local/demo workflows (via browser storage) and API-driven workflows for production environments.
 
 ## 2) Features
@@ -62,6 +63,12 @@ At a high level:
 4. Pages render operational views (dashboard, records, costs, funds, reports).
 5. Service modules call REST endpoints when `VITE_API_URL` is configured.
 6. Axios interceptors attach token headers and handle unauthorized responses.
+
+### Single-page application (SPA) and routing
+
+- The UI is delivered as a static Vite build: a single `index.html` plus JavaScript bundles.
+- **Client-side routing** means URLs such as `/dashboard/reports` exist only in the browser until the app boots. A production host must **rewrite unknown paths to `index.html`** (HTTP 200), or direct visits and hard refreshes on those URLs will 404.
+- This repository includes host-specific helpers: `public/_redirects` (copied into `dist/` for Netlify and Cloudflare Pages), `vercel.json` (Vercel rewrites), and `netlify.toml` (build command and publish directory). Adjust or extend these if you use another platform.
 
 ### Architecture Highlights
 
@@ -185,6 +192,7 @@ For request/response examples, see `PROJECT_DOCUMENTATION.md`.
 
 ```text
 cafe-frontend/
+|-- public/                    # Static files copied to dist (e.g. _redirects for SPA hosts)
 |-- src/
 |   |-- pages/                 # Route-level screens
 |   |-- layouts/               # App layout wrappers
@@ -196,7 +204,10 @@ cafe-frontend/
 |   |-- shared/utils/          # Helpers, calculations, exports, validation
 |   |-- assets/                # Static assets
 |   |-- App.tsx                # Route config and guards
-|   `-- main.tsx               # App bootstrap
+|   `-- main.tsx               # App bootstrap (BrowserRouter)
+|-- netlify.toml               # Netlify build + publish (SPA deploy)
+|-- vercel.json                # Vercel SPA rewrites
+|-- vite.config.ts
 |-- docs/                      # Supplementary project docs
 |-- PROJECT_DOCUMENTATION.md   # Extended project + API/test/deployment docs
 `-- README.md
@@ -224,17 +235,22 @@ npx vitest
 
 ## 11) Deployment
 
-This app is a static Vite build and can be deployed on Netlify, Vercel, Render, GitHub Pages, or any static host.
+This app is a **static SPA** (Vite `dist/` output) and can be deployed on Netlify, Vercel, Cloudflare Pages, Render, or any static host that can serve files and apply a **fallback to `index.html`** for HTML5 history routes.
 
 ### Production Steps
 
 1. Install dependencies: `npm ci` or `npm install`
 2. Build: `npm run build`
-3. Deploy the `dist/` folder
-4. Configure SPA fallback so non-root routes serve `index.html`
-5. Set `VITE_API_URL` in your hosting environment if using backend APIs
+3. Deploy the **`dist/`** folder (not the repo root).
+4. Ensure **SPA routing** is enabled: every path that is not a real static file should return `index.html` so React Router can render the correct screen. The files below are already in this repo for common hosts:
+   - **`public/_redirects`** — Netlify and Cloudflare Pages (`/*` → `/index.html` with status 200); copied into `dist/` on build.
+   - **`vercel.json`** — Vercel rewrite to `index.html` for unmatched routes.
+   - **`netlify.toml`** — `npm run build` and `publish = "dist"` for Netlify.
+5. Set `VITE_API_URL` in your hosting environment if you use the backend API.
 
 ### Nginx SPA fallback example
+
+For self-hosted or VPS setups, map missing files to the SPA shell:
 
 ```nginx
 location / {
