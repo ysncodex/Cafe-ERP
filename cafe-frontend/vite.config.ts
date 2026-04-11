@@ -29,9 +29,12 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+
           if (
             id.includes('node_modules/react-dom') ||
             id.includes('node_modules/react/') ||
+            id.includes('node_modules/scheduler') ||
             id.includes('node_modules/react-router')
           ) {
             return 'vendor-react';
@@ -39,8 +42,12 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) {
             return 'vendor-recharts';
           }
-          if (id.includes('node_modules/jspdf') || id.includes('node_modules/html2canvas')) {
-            return 'vendor-pdf';
+          // Split PDF stack: html2canvas is large; keeping it separate avoids one 600kB+ chunk.
+          if (id.includes('node_modules/html2canvas')) {
+            return 'vendor-html2canvas';
+          }
+          if (id.includes('node_modules/jspdf')) {
+            return 'vendor-jspdf';
           }
           if (id.includes('node_modules/xlsx')) {
             return 'vendor-xlsx';
