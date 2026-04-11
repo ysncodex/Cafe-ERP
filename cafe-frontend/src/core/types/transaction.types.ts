@@ -22,6 +22,8 @@ export interface Transaction {
   type: TransactionType;
   amount: number;
   method: PaymentMethod;
+  /** Expense/product grouping label when provided by API or forms */
+  category?: string;
   channel?: SalesChannel;
   description: string;
   quantity?: number;

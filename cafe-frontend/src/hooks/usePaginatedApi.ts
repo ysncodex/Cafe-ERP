@@ -78,7 +78,7 @@ export const usePaginatedApi = <T>(
 
       // Call error callback if provided
       if (onError) {
-        onError(err);
+        onError(err instanceof Error ? err : new Error(errorMessage));
       }
     } finally {
       setLoading(false);

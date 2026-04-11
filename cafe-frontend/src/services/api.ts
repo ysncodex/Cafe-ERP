@@ -44,14 +44,11 @@ export const api = {
   get: <T>(url: string, params?: Record<string, unknown>) =>
     apiClient.get<unknown, T>(url, { params }),
 
-  post: <T>(url: string, data?: Record<string, unknown>) =>
-    apiClient.post<unknown, T>(url, data),
+  post: <T>(url: string, data?: unknown) => apiClient.post<unknown, T>(url, data),
 
-  put: <T>(url: string, data?: Record<string, unknown>) =>
-    apiClient.put<unknown, T>(url, data),
+  put: <T>(url: string, data?: unknown) => apiClient.put<unknown, T>(url, data),
 
-  patch: <T>(url: string, data?: Record<string, unknown>) =>
-    apiClient.patch<unknown, T>(url, data),
+  patch: <T>(url: string, data?: unknown) => apiClient.patch<unknown, T>(url, data),
 
   delete: <T>(url: string) =>
     apiClient.delete<unknown, T>(url),
