@@ -14,13 +14,14 @@ import type { NewOrderData } from '../types/menuItem.types';
 
 // ─── Business identity ──────────────────────────────────────────────────────
 
+/** ASCII-safe strings — thermal printers render these sharply (no thin accents/dashes). */
 export const RECEIPT_BRAND = {
-  name: 'Beans & Butter Café',
-  tagline: 'Demra · Dhaka',
+  name: 'Beans & Butter Cafe',
+  tagline: 'Demra, Dhaka',
   address: 'House 12, Demra Road, Dhaka-1232',
   phone: '+880 1XXX-XXXXXX',
-  footerThanks: 'Thank you — see you again!',
-  wifi: 'Wi-Fi: BeansGuest · beans.and.butter',
+  footerThanks: 'Thank you - see you again!',
+  wifi: 'Wi-Fi: BeansGuest | beans.and.butter',
 } as const;
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -76,28 +77,33 @@ function discountLabel(order: NewOrderData): string {
   return 'Discount';
 }
 
-// ─── Shared CSS (plain classes — used for screen + print) ───────────────────
+// ─── Shared CSS (plain classes — screen preview in POS modal) ───────────────
 
 export const RECEIPT_CSS = `
 .rcpt {
-  font-family: 'Consolas', 'Menlo', 'Courier New', monospace;
+  font-family: 'Courier New', Courier, monospace;
   color: #111827;
   width: 100%;
   font-size: 12px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
+  line-height: 1.45;
 }
 .rcpt * { box-sizing: border-box; }
 .rcpt-center { text-align: center; }
-.rcpt-name { font-size: 16px; font-weight: 800; letter-spacing: 0.5px; }
-.rcpt-muted { color: #6b7280; }
+.rcpt-name { font-size: 16px; font-weight: 700; }
+.rcpt-muted { color: #374151; }
 .rcpt-sm { font-size: 11px; }
 .rcpt-xs { font-size: 10px; }
-.rcpt-hr { border: none; border-top: 1px dashed #9ca3af; margin: 8px 0; }
+.rcpt-hr { border: none; border-top: 1px solid #374151; margin: 8px 0; }
 .rcpt-hr-solid { border: none; border-top: 2px solid #111827; margin: 8px 0; }
-.rcpt-row { display: flex; justify-content: space-between; gap: 8px; }
-.rcpt-row + .rcpt-row { margin-top: 2px; }
-.rcpt-label { color: #6b7280; }
+.rcpt-row {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+.rcpt-row + .rcpt-row { margin-top: 3px; }
+.rcpt-row > span { display: table-cell; vertical-align: top; }
+.rcpt-row > span:last-child { text-align: right; white-space: nowrap; }
+.rcpt-label { color: #374151; font-weight: 600; }
 .rcpt-strong { font-weight: 700; }
 .rcpt-badge {
   display: inline-block;
@@ -105,31 +111,97 @@ export const RECEIPT_CSS = `
   color: #fff;
   font-weight: 700;
   padding: 2px 10px;
-  border-radius: 4px;
-  letter-spacing: 1px;
 }
 .rcpt-items { margin: 4px 0; }
-.rcpt-item { margin-bottom: 6px; }
-.rcpt-item-top { display: flex; justify-content: space-between; gap: 8px; }
-.rcpt-item-name { font-weight: 600; flex: 1; }
+.rcpt-item { margin-bottom: 8px; }
+.rcpt-item-top {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+.rcpt-item-top > span { display: table-cell; vertical-align: top; }
+.rcpt-item-top > span:last-child { text-align: right; white-space: nowrap; }
+.rcpt-item-name { font-weight: 700; word-break: break-word; padding-right: 6px; }
 .rcpt-item-total { font-weight: 700; white-space: nowrap; }
-.rcpt-item-sub { color: #6b7280; font-size: 10px; margin-top: 1px; }
-.rcpt-total-row { display: flex; justify-content: space-between; font-weight: 800; font-size: 15px; }
+.rcpt-item-sub { color: #374151; font-size: 11px; margin-top: 2px; font-weight: 600; }
+.rcpt-total-row {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  font-weight: 700;
+  font-size: 15px;
+}
+.rcpt-total-row > span { display: table-cell; vertical-align: top; }
+.rcpt-total-row > span:last-child { text-align: right; white-space: nowrap; }
 .rcpt-section { margin: 6px 0; }
-.rcpt-gift { font-size: 9px; font-weight: 800; color: #059669; letter-spacing: 0.5px; }
-.rcpt-free { color: #059669; font-weight: 700; }
+.rcpt-gift { font-size: 10px; font-weight: 700; }
+.rcpt-free { font-weight: 700; }
 
 /* Kitchen chit */
-.chit { font-family: 'Consolas', 'Menlo', 'Courier New', monospace; color: #111827; width: 100%; }
-.chit-title { text-align: center; font-size: 22px; font-weight: 800; letter-spacing: 3px; }
-.chit-type { text-align: center; font-size: 15px; font-weight: 800; text-transform: uppercase; margin-top: 2px; }
+.chit { font-family: 'Courier New', Courier, monospace; color: #111827; width: 100%; }
+.chit-title { text-align: center; font-size: 20px; font-weight: 700; }
+.chit-type { text-align: center; font-size: 14px; font-weight: 700; text-transform: uppercase; margin-top: 2px; }
 .chit-table { text-align: center; margin-top: 6px; }
-.chit-meta { display: flex; justify-content: space-between; font-weight: 700; font-size: 13px; }
+.chit-meta {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  font-weight: 700;
+  font-size: 13px;
+}
+.chit-meta > span { display: table-cell; vertical-align: top; }
+.chit-meta > span:last-child { text-align: right; white-space: nowrap; }
 .chit-name { font-weight: 700; margin-top: 4px; }
 .chit-items { margin: 8px 0; }
-.chit-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
-.chit-qty { font-size: 20px; font-weight: 800; line-height: 1; width: 38px; flex-shrink: 0; }
-.chit-item-name { font-size: 14px; font-weight: 700; line-height: 1.3; padding-top: 2px; }
+.chit-item {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  margin-bottom: 8px;
+}
+.chit-qty, .chit-item-name { display: table-cell; vertical-align: top; }
+.chit-qty { font-size: 18px; font-weight: 700; line-height: 1; width: 36px; white-space: nowrap; }
+.chit-item-name { font-size: 14px; font-weight: 700; line-height: 1.3; word-break: break-word; }
+`.trim();
+
+/**
+ * Thermal-printer overrides — injected only in the print popup.
+ * Thermal heads need pure black, bold strokes, no grayscale or font smoothing.
+ */
+export const RECEIPT_THERMAL_PRINT_CSS = `
+html, body, .rcpt, .chit, .rcpt *, .chit * {
+  color: #000 !important;
+  -webkit-font-smoothing: none !important;
+  -moz-osx-font-smoothing: auto !important;
+  text-rendering: geometricPrecision;
+}
+.rcpt, .chit {
+  font-family: 'Courier New', Courier, monospace !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 700 !important;
+}
+.rcpt-muted, .rcpt-label, .rcpt-item-sub, .rcpt-gift, .rcpt-free {
+  color: #000 !important;
+  font-weight: 700 !important;
+}
+.rcpt-name { font-size: 18px !important; }
+.rcpt-sm { font-size: 12px !important; }
+.rcpt-xs { font-size: 11px !important; }
+.rcpt-item-sub { font-size: 11px !important; }
+.rcpt-total-row { font-size: 16px !important; }
+.rcpt-hr { border-top: 1px solid #000 !important; margin: 6px 0 !important; }
+.rcpt-hr-solid { border-top: 2px solid #000 !important; margin: 6px 0 !important; }
+.rcpt-badge {
+  background: #000 !important;
+  color: #fff !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.chit-title { font-size: 22px !important; }
+.chit-type { font-size: 15px !important; }
+.chit-qty { font-size: 20px !important; }
+.chit-item-name { font-size: 14px !important; }
 `.trim();
 
 // ─── Customer receipt HTML ──────────────────────────────────────────────────
@@ -264,6 +336,6 @@ export function buildKitchenChitHTML(order: NewOrderData): string {
   <hr class="rcpt-hr" />
   <div class="chit-items">${itemsHTML}</div>
   <hr class="rcpt-hr-solid" />
-  <div class="rcpt-center rcpt-muted rcpt-xs">${esc(receiptDate(order.createdAt))} · ${esc(receiptTime(order.createdAt))}</div>
+  <div class="rcpt-center rcpt-muted rcpt-xs">${esc(receiptDate(order.createdAt))} - ${esc(receiptTime(order.createdAt))}</div>
 </div>`.trim();
 }

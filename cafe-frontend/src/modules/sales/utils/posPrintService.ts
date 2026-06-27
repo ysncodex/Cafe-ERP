@@ -5,7 +5,7 @@
  * • Cannot auto-select a physical printer without the system default being set.
  * • Cannot bypass the print dialog in a normal web app (kiosk mode / extensions differ).
  * • Paper size depends on the Windows driver — set Rangta to 80 mm roll once.
- * • @page size hints work when the driver supports custom / roll paper.
+ * • Use portrait in the print dialog; avoid custom @page widths (causes 90° rotation).
  *
  * Recommended one-time setup:
  * 1. Set your Rangta (RP326, RP850, etc.) as default receipt printer.
@@ -16,6 +16,7 @@
 import type { NewOrderData } from '../types/menuItem.types';
 import {
   RECEIPT_CSS,
+  RECEIPT_THERMAL_PRINT_CSS,
   buildCustomerReceiptHTML,
   buildKitchenChitHTML,
 } from './receiptPrint';
@@ -84,24 +85,38 @@ function esc(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Print CSS tuned for Rangta roll printers — portrait, minimal margins, no A4 waste. */
+/** 96 dpi CSS pixels — used for screen preview in the print popup. */
+function rollWidthPx(widthMm: number): number {
+  return Math.round(widthMm * 3.7795275591);
+}
+
+/**
+ * Print CSS tuned for Rangta roll printers — portrait, minimal margins, no A4 waste.
+ *
+ * Do NOT use `@page { size: 80mm auto }` — Chrome/Edge often treat that as landscape
+ * on thermal drivers, which prints the receipt rotated 90° on the roll.
+ */
 export function buildPrintPageCss(widthMm: number): string {
+  const widthPx = rollWidthPx(widthMm);
   return `
 @page {
-  size: ${widthMm}mm auto;
   margin: 0;
+  size: portrait;
 }
 @media print {
   @page {
-    size: ${widthMm}mm auto;
     margin: 0;
+    size: portrait;
   }
   html, body {
     width: ${widthMm}mm !important;
     max-width: ${widthMm}mm !important;
+    min-width: ${widthMm}mm !important;
     margin: 0 !important;
-    padding: 2mm 2mm !important;
+    padding: 2mm !important;
     background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .print-page {
     width: 100% !important;
@@ -111,15 +126,16 @@ export function buildPrintPageCss(widthMm: number): string {
     page-break-after: always;
   }
 }
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #fff;
-  width: ${widthMm}mm;
-  max-width: ${widthMm}mm;
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    width: ${widthPx}px;
+    max-width: ${widthPx}px;
+    color: #000;
 }
 body {
-  padding: 2mm;
+  padding: 6px;
 }
 .print-page { width: 100%; }
 .page-break { page-break-after: always; }
@@ -148,24 +164,29 @@ export function printOrderAsync(
     let title: string;
     let bodyHTML: string;
     let pageCss: string;
+    let viewportW: number;
 
     if (kind === 'customer') {
       title = `Receipt · ${order.orderNumber}`;
       bodyHTML = `<div class="print-page">${buildCustomerReceiptHTML(order)}</div>`;
       pageCss = buildPrintPageCss(customerW);
+      viewportW = customerW;
     } else if (kind === 'kitchen') {
       title = `Kitchen · ${order.orderNumber}`;
       bodyHTML = `<div class="print-page">${buildKitchenChitHTML(order)}</div>`;
       pageCss = buildPrintPageCss(kitchenW);
+      viewportW = kitchenW;
     } else {
       title = `Order · ${order.orderNumber}`;
       bodyHTML =
         `<div class="print-page page-break">${buildCustomerReceiptHTML(order)}</div>` +
         `<div class="print-page">${buildKitchenChitHTML(order)}</div>`;
       pageCss = buildPrintPageCss(customerW);
+      viewportW = customerW;
     }
 
-    const win = window.open('', '_blank', 'width=420,height=720');
+    const popupW = rollWidthPx(viewportW) + 24;
+    const win = window.open('', '_blank', `width=${popupW},height=800,scrollbars=yes`);
     if (!win) {
       resolve(false);
       return;
@@ -176,9 +197,9 @@ export function printOrderAsync(
 <html>
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=${customerW}, initial-scale=1" />
+<meta name="viewport" content="width=${rollWidthPx(viewportW)}, initial-scale=1" />
 <title>${esc(title)}</title>
-<style>${pageCss}\n${RECEIPT_CSS}</style>
+<style>${pageCss}\n${RECEIPT_CSS}\n${RECEIPT_THERMAL_PRINT_CSS}</style>
 </head>
 <body>${bodyHTML}</body>
 </html>`);
@@ -202,13 +223,18 @@ export function printOrderAsync(
 
     const trigger = () => {
       win.focus();
-      win.print();
+      // Let layout settle so thermal drivers get crisp, fully-rendered text.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(() => win.print(), 200);
+        });
+      });
     };
 
     if (win.document.readyState === 'complete') {
-      setTimeout(trigger, 300);
+      setTimeout(trigger, 100);
     } else {
-      win.onload = () => setTimeout(trigger, 300);
+      win.onload = () => setTimeout(trigger, 100);
     }
 
     // Fallback if onafterprint never fires (some drivers)
@@ -227,6 +253,7 @@ export const PRINT_SETUP_NOTES = [
   'Set your Rangta printer as the Windows default (or pick it once in the print dialog).',
   'Paper size: 80 mm roll, continuous height, Portrait orientation.',
   'Margins: None or Minimum in the browser print dialog.',
+  'Scale: 100% — do not shrink or fit to page.',
   'Allow pop-ups for this site so receipts can print.',
   'Chrome and Edge use the same print engine — behavior is identical when settings match.',
 ] as const;
