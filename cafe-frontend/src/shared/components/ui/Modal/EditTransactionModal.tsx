@@ -1,12 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Pencil } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Pencil, X } from 'lucide-react';
 import type { EditTransactionModalProps } from './Modal.types';
 import type { Transaction, UnitType, PaymentMethod, SalesChannel } from '@/core/types';
 
-/**
- * EditTransactionModal Component
- * Edit transaction details with validation
- */
 export function EditTransactionModal({
   isOpen,
   onClose,
@@ -19,54 +15,86 @@ export function EditTransactionModal({
 
   useEffect(() => {
     if (transaction) {
-      // Sync props into local editable state when switching transactions.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditData({ ...transaction });
     }
   }, [transaction]);
 
-  if (!isOpen || !transaction) return null;
+  const update = useCallback(
+    <K extends keyof Transaction>(field: K, value: Transaction[K]) =>
+      setEditData((prev) => ({ ...prev, [field]: value })),
+    [],
+  );
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     onSave({ ...transaction, ...editData } as Transaction);
     onClose();
-  };
+  }, [transaction, editData, onSave, onClose]);
+
+  if (!isOpen || !transaction) return null;
+
+  const isAmountValid = Number(editData.amount) > 0;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-indigo-100 p-3 rounded-xl text-indigo-600">
-            <Pencil size={24} />
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-100 p-3 rounded-xl text-indigo-600">
+              <Pencil size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Edit Transaction</h3>
+              <p className="text-xs text-slate-500">Update the fields you want to change</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-800">Edit Transaction</h3>
-            <p className="text-xs text-slate-500">Modify the transaction details below</p>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         <div className="space-y-4">
           {/* Amount */}
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Amount</label>
+            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">
+              Amount (৳)
+            </label>
             <input
               type="number"
-              value={editData.amount || ''}
-              onChange={(e) => setEditData({ ...editData, amount: Number(e.target.value) })}
+              min="0"
+              step="0.01"
+              placeholder="e.g. 500"
+              value={editData.amount ?? ''}
+              onChange={(e) => update('amount', Number(e.target.value))}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
             />
+            {!isAmountValid && editData.amount !== undefined && (
+              <p className="text-xs text-rose-500 mt-1">Amount must be greater than zero</p>
+            )}
           </div>
 
           {/* Description */}
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">
-              Description / Item Name
+              Item Description
             </label>
             <input
               type="text"
               list="edit-items"
-              value={editData.description || ''}
-              onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+              placeholder="e.g. Milk, Electricity Bill"
+              value={editData.description ?? ''}
+              onChange={(e) => update('description', e.target.value)}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <datalist id="edit-items">
@@ -76,7 +104,7 @@ export function EditTransactionModal({
             </datalist>
           </div>
 
-          {/* Supplier - for product costs */}
+          {/* Supplier — product expenses only */}
           {transaction.type === 'expense_product' && (
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">
@@ -85,8 +113,9 @@ export function EditTransactionModal({
               <input
                 type="text"
                 list="edit-suppliers"
-                value={editData.supplier || ''}
-                onChange={(e) => setEditData({ ...editData, supplier: e.target.value })}
+                placeholder="e.g. ABC Traders"
+                value={editData.supplier ?? ''}
+                onChange={(e) => update('supplier', e.target.value)}
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <datalist id="edit-suppliers">
@@ -97,7 +126,7 @@ export function EditTransactionModal({
             </div>
           )}
 
-          {/* Quantity & Unit - for product costs */}
+          {/* Quantity & Unit — product expenses only */}
           {transaction.type === 'expense_product' && (
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -106,8 +135,11 @@ export function EditTransactionModal({
                 </label>
                 <input
                   type="number"
-                  value={editData.quantity || ''}
-                  onChange={(e) => setEditData({ ...editData, quantity: Number(e.target.value) })}
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 5"
+                  value={editData.quantity ?? ''}
+                  onChange={(e) => update('quantity', Number(e.target.value))}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -116,8 +148,8 @@ export function EditTransactionModal({
                   Unit
                 </label>
                 <select
-                  value={editData.unit || 'pcs'}
-                  onChange={(e) => setEditData({ ...editData, unit: e.target.value as UnitType })}
+                  value={editData.unit ?? 'pcs'}
+                  onChange={(e) => update('unit', e.target.value as UnitType)}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="pcs">Pcs</option>
@@ -138,29 +170,25 @@ export function EditTransactionModal({
               Payment Method
             </label>
             <select
-              value={editData.method || 'cash'}
-              onChange={(e) =>
-                setEditData({ ...editData, method: e.target.value as PaymentMethod })
-              }
+              value={editData.method ?? 'cash'}
+              onChange={(e) => update('method', e.target.value as PaymentMethod)}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="cash">Cash</option>
-              <option value="bank">Bank</option>
+              <option value="bank">Bank Transfer</option>
               <option value="bkash">bKash</option>
             </select>
           </div>
 
-          {/* Channel - for sales */}
+          {/* Sales Channel — sales only */}
           {transaction.type === 'sale' && (
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">
-                Platform
+                Sales Channel
               </label>
               <select
-                value={editData.channel || 'in_store'}
-                onChange={(e) =>
-                  setEditData({ ...editData, channel: e.target.value as SalesChannel })
-                }
+                value={editData.channel ?? 'in_store'}
+                onChange={(e) => update('channel', e.target.value as SalesChannel)}
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="in_store">In-Store</option>
@@ -170,16 +198,20 @@ export function EditTransactionModal({
             </div>
           )}
 
+          {/* Actions */}
           <div className="flex gap-3 pt-4">
             <button
+              type="button"
               onClick={onClose}
               className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleSave}
-              className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-colors"
+              disabled={!isAmountValid}
+              className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               Save Changes
             </button>

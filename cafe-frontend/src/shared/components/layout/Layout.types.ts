@@ -7,6 +7,18 @@ export interface SidebarProps {
   activeTab: TabId;
   isOpen: boolean;
   onClose: () => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-export type TabId = 'dashboard' | 'daily_record' | 'daily_expense' | 'product_cost' | 'fixed_cost' | 'fund' | 'report';
+export type TabId =
+  // Main
+  | 'dashboard' | 'daily_record' | 'report'
+  // Operations
+  | 'daily_expense' | 'product_cost' | 'fixed_cost' | 'fund'
+  // Revenue
+  | 'pos_sync' | 'new_order' | 'product_list' | 'order_history'
+  // Inventory
+  | 'suppliers'
+  // Workforce
+  | 'staff_roster' | 'payroll';

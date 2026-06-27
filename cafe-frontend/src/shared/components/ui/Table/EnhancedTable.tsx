@@ -8,17 +8,14 @@ import {
   type SortingState,
   type ColumnFiltersState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, ChevronsUpDown, Search, Download } from 'lucide-react';
-import { toast } from 'sonner';
-import { exportToExcel } from '@/shared/utils';
-import type { Transaction } from '@/core/types';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Search } from 'lucide-react';
 import type { TableProps } from './Table.types';
 
 export function EnhancedTable<T>({ 
   data, 
   columns, 
-  searchPlaceholder = 'Search...', 
-  exportFileName = 'data' 
+  searchPlaceholder = 'Search...',
+  onRowClick,
 }: TableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -40,19 +37,9 @@ export function EnhancedTable<T>({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const handleExport = async () => {
-    try {
-      const exportData = table.getFilteredRowModel().rows.map(row => row.original);
-      await exportToExcel(exportData as unknown as Transaction[], exportFileName);
-      toast.success(`📊 Exported ${exportData.length} rows to Excel`);
-    } catch {
-      toast.error('Failed to export data');
-    }
-  };
-
   return (
     <div className="space-y-4">
-      {/* Search and Export Header */}
+      {/* Search Header */}
       <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
@@ -63,15 +50,6 @@ export function EnhancedTable<T>({
             placeholder={searchPlaceholder}
             className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium text-sm"
-          >
-            <Download size={16} />
-            Export ({table.getFilteredRowModel().rows.length})
-          </button>
         </div>
       </div>
 
@@ -122,7 +100,25 @@ export function EnhancedTable<T>({
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50 transition-colors">
+                  <tr
+                    key={row.id}
+                    role={onRowClick ? 'button' : undefined}
+                    tabIndex={onRowClick ? 0 : undefined}
+                    onClick={() => onRowClick?.(row.original)}
+                    onKeyDown={
+                      onRowClick
+                        ? (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              onRowClick(row.original);
+                            }
+                          }
+                        : undefined
+                    }
+                    className={`group transition-colors duration-100 ${
+                      onRowClick ? 'cursor-pointer hover:bg-indigo-50/50' : 'hover:bg-indigo-50/50'
+                    }`}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-3 py-2 text-xs text-slate-700">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

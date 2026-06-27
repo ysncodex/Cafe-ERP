@@ -31,13 +31,25 @@ export type {
 // Table components
 export { EnhancedTable } from './Table/EnhancedTable';
 export type { TableProps } from './Table/Table.types';
+export {
+  DataTableShell,
+  DataTable,
+  DataTableColGroup,
+  DataTableHead,
+  DataTableHeadRow,
+  DataTableHeadCell,
+  DataTableBody,
+  DataTableRow,
+  DataTableCell,
+} from './Table/DataTable';
+export type { DataTableAlign, DataTableRowVariant } from './Table/DataTable';
 
 // Toast
 export { ToastProvider } from './Toast/ToastProvider';
 
-// DemoMode toggle
-export { DemoModeToggle } from './DemoMode/DemoModeToggle';
-
 // Pagination
 export { Pagination } from './Pagination/Pagination';
 export type { PaginationProps } from './Pagination/Pagination';
+
+// Export (re-export from central module)
+export { ExportDropdown, ExportPreviewModal } from '@/shared/export';
