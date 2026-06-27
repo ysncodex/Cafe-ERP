@@ -72,13 +72,9 @@ export const DATE_RANGES = {
 // Transaction Types
 export const TRANSACTION_TYPES = {
   SALE: 'sale',
+  SALE_ADJUSTMENT: 'sale_adjustment',
   EXPENSE_PRODUCT: 'expense_product',
   EXPENSE_FIXED: 'expense_fixed',
-  FUND_IN: 'fund_in',
-  FUND_OUT: 'fund_out',
-  CASH_TO_FUND: 'cash_to_fund',
-  CASH_ADDED: 'cash_added',
-  FUND_TO_CASH: 'fund_to_cash',
 } as const;
 
 // Currency
@@ -87,7 +83,9 @@ export const CURRENCY = '৳';
 // Pagination
 export const PAGINATION = {
   DEFAULT_PAGE_SIZE: 10,
-  PAGE_SIZE_OPTIONS: [10, 20, 50, 100],
+  ORDER_HISTORY_PAGE_SIZE: 6,
+  PAGE_SIZE_OPTIONS: [6, 10, 15, 25, 50],
+  ORDER_HISTORY_PAGE_SIZE_OPTIONS: [6, 10, 15, 25, 50],
 };
 
 // Local Storage Keys
@@ -96,7 +94,9 @@ export const STORAGE_KEYS = {
   USER: 'user',
   THEME: 'theme',
   ERP_STATE: 'erp_state_v1',
-  ERP_STATE_DEMO: 'erp_state_demo_v2',
   DATE_RANGE: 'dateRange',
-  DEMO_MODE: 'demo_mode',
+  /** Local POS hub: offline queue + integration audit log + sync failures */
+  POS_SYNC_HUB: 'pos_sync_hub_v1',
+  /** Ingredient ledger + par levels — separate key from core ERP transactions */
+  INVENTORY_STOCK: 'inventory_stock_v1',
 };

@@ -8,9 +8,10 @@ export const saleSchema = z.object({
     .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
       message: 'Amount must be a positive number',
     }),
-  description: z.string().max(200, 'Description too long').optional(),
+  description: z.string().min(1, 'Description is required').max(200, 'Max 200 characters'),
   method: z.enum(['cash', 'bank', 'bkash']),
   channel: z.enum(['in_store', 'foodpanda', 'foodi']),
+  isAdjustment: z.boolean(),
 });
 
 // Product Cost/Expense Schema
@@ -47,20 +48,6 @@ export const fixedCostSchema = z.object({
   method: z.enum(['cash', 'bank', 'bkash']),
 });
 
-// Fund Operation Schema
-export const fundOperationSchema = z.object({
-  type: z.enum(['fund_in', 'fund_out', 'cash_to_fund', 'cash_added', 'fund_to_cash']),
-  amount: z
-    .string()
-    .min(1, 'Amount is required')
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: 'Amount must be positive',
-    }),
-  source: z.string().min(1, 'Source is required').max(100),
-  reason: z.string().min(1, 'Reason is required').max(200),
-  description: z.string().max(200).optional(),
-});
-
 // Login Schema
 export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
@@ -91,7 +78,6 @@ export const settingsSchema = z.object({
 export type SaleFormData = z.infer<typeof saleSchema>;
 export type ProductCostFormData = z.infer<typeof productCostSchema>;
 export type FixedCostFormData = z.infer<typeof fixedCostSchema>;
-export type FundOperationFormData = z.infer<typeof fundOperationSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type ManagerPasswordFormData = z.infer<typeof managerPasswordSchema>;
 export type SettingsFormData = z.infer<typeof settingsSchema>;
