@@ -15,14 +15,25 @@ export default defineConfig(({ mode }) => ({
       }),
   ].filter(Boolean),
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@/core': path.resolve(__dirname, './src/core'),
-      '@/shared': path.resolve(__dirname, './src/shared'),
-      '@/features': path.resolve(__dirname, './src/features'),
-      '@/lib': path.resolve(__dirname, './src/lib'),
-      '@/assets': path.resolve(__dirname, './src/assets'),
-    },
+    // Array format guarantees ordering: most-specific aliases are checked first,
+    // so they win over the catch-all '@' entry at the bottom.
+    alias: [
+      // ── Specific module aliases ──────────────────────────────────────────
+      { find: '@/app',      replacement: path.resolve(__dirname, './src/app') },
+      { find: '@/modules',  replacement: path.resolve(__dirname, './src/modules') },
+      { find: '@/core',     replacement: path.resolve(__dirname, './src/core') },
+      { find: '@/shared',   replacement: path.resolve(__dirname, './src/shared') },
+      { find: '@/features', replacement: path.resolve(__dirname, './src/features') },
+      { find: '@/lib',      replacement: path.resolve(__dirname, './src/lib') },
+      { find: '@/assets',   replacement: path.resolve(__dirname, './src/assets') },
+      // ── Backward-compat (old paths → new locations) ──────────────────────
+      { find: '@/context',  replacement: path.resolve(__dirname, './src/core/context') },
+      { find: '@/hooks',    replacement: path.resolve(__dirname, './src/shared/hooks') },
+      { find: '@/layouts',  replacement: path.resolve(__dirname, './src/app/layouts') },
+      { find: '@/services', replacement: path.resolve(__dirname, './src/core/api') },
+      // ── Catch-all (must be last) ─────────────────────────────────────────
+      { find: '@',          replacement: path.resolve(__dirname, './src') },
+    ],
   },
   build: {
     chunkSizeWarningLimit: 500,
