@@ -176,6 +176,44 @@ export const EnhancedAreaChart = memo(function EnhancedAreaChart({
   );
 });
 
+// Custom tooltip for the Comparison Chart
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ComparisonTooltip({ active, payload, label }: any) {
+  if (!active || !payload || payload.length === 0) return null;
+  const current: number = payload.find((p: { dataKey: string }) => p.dataKey === 'value')?.value ?? 0;
+  const previous: number = payload.find((p: { dataKey: string }) => p.dataKey === 'compare')?.value ?? 0;
+  const diff = current - previous;
+  const pct = previous > 0 ? ((diff / previous) * 100).toFixed(1) : null;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl p-3 text-xs min-w-[160px]">
+      <p className="font-bold text-slate-700 mb-2">{label}</p>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1.5 text-slate-500">
+            <span className="inline-block w-2 h-2 rounded-full bg-indigo-500" />
+            This period
+          </span>
+          <span className="font-bold text-slate-800">{formatCurrency(current)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1.5 text-slate-400">
+            <span className="inline-block w-2 h-2 rounded-full bg-slate-400" />
+            Prior period
+          </span>
+          <span className="font-semibold text-slate-500">{formatCurrency(previous)}</span>
+        </div>
+        {pct !== null && (
+          <div className={`flex items-center justify-between border-t border-slate-100 pt-1.5 font-bold ${diff >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+            <span>Change</span>
+            <span>{diff >= 0 ? '↑' : '↓'} {Math.abs(Number(pct))}%</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Comparison Line Chart (Current vs Previous Period)
 export const ComparisonChart = memo(function ComparisonChart({
   data,
@@ -188,7 +226,6 @@ export const ComparisonChart = memo(function ComparisonChart({
     <div className="w-full">
       {title && <h4 className="text-sm font-bold text-slate-700 mb-4">{title}</h4>}
 
-      {/* Give the chart and legend their own space so legend never gets clipped */}
       <div className="w-full h-56">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
@@ -207,16 +244,8 @@ export const ComparisonChart = memo(function ComparisonChart({
               width={44}
             />
             <Tooltip
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(v: any) => formatCurrency(v)}
-              contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                fontSize: '12px',
-              }}
-              labelStyle={{ color: '#334155', fontWeight: 700 }}
+              content={<ComparisonTooltip />}
+              cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '4 4', strokeOpacity: 0.6 }}
             />
             <Line
               type="monotone"
@@ -224,7 +253,7 @@ export const ComparisonChart = memo(function ComparisonChart({
               stroke="#6366f1"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 5 }}
+              activeDot={{ r: 5, fill: '#6366f1', strokeWidth: 2, stroke: '#fff' }}
               name="Current Period"
               isAnimationActive
               animationDuration={450}
@@ -237,7 +266,7 @@ export const ComparisonChart = memo(function ComparisonChart({
               strokeWidth={2}
               strokeDasharray="6 6"
               dot={false}
-              activeDot={{ r: 5 }}
+              activeDot={{ r: 4, fill: '#94a3b8', strokeWidth: 2, stroke: '#fff' }}
               name="Previous Period"
               isAnimationActive
               animationDuration={450}

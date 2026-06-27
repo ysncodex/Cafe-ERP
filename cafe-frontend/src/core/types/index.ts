@@ -17,9 +17,12 @@ export interface ERPContextType {
   // Transactions
   transactions: Transaction[];
   filteredTransactions: Transaction[];
-  addTransaction: (t: Omit<Transaction, 'id' | 'date'> & { date?: Date }) => void;
+  /** Adds a transaction and returns the fully-formed record (including generated id). */
+  addTransaction: (t: Omit<Transaction, 'id' | 'date'> & { date?: Date }) => Transaction;
   deleteTransaction: (id: string) => void;
   updateTransaction: (t: Transaction) => void;
+  /** Wipes all transactions and resets lists to legacy defaults. Useful for logout / demo reset. */
+  clearAllData: () => void;
 
   // Filters
   dateRange: DateRange;
@@ -66,17 +69,11 @@ export interface ERPStats {
   cashExpenses: number;
   bankExpenses: number;
   bkashExpenses: number;
-  fundTotal: number;
-  totalAdded: number;
   totalExpenses: number;
   totalProductCost: number;
   totalFixedCost: number;
-  monthlyFundGenerated: number;
   dailyAvailableCash: number;
   netCashInRange: number;
-  externalFundBalance: ExternalFundBalanceBreakdown;
-  fundAdded: FundAddedBreakdown;
-  fundWithdrawn: FundWithdrawnBreakdown;
   profit: number;
   grossProfit: number;
   expenseCategories: Record<string, number>;
@@ -97,23 +94,13 @@ export interface DailyRecord {
   bankCosts: number;
   bkashCosts: number;
   dailyCosts: number;
-  cashAdded: number;
-  cashAddedExternal: number;
-  fundToCash: number;
-  cashToFund: number;
-  cashFundOut: number;
-  bankFundOut: number;
-  bkashFundOut: number;
-  fundIn: number;
-  fundOut: number;
+  /** cashSales + bkashSales + bankSales */
+  totalSales: number;
+  /** Net cash flow for the day: totalSales − dailyCosts */
+  dailyAvail: number;
 }
 
 // Re-export types for convenience
 import type { Transaction } from './transaction.types';
-import type {
-  PaymentMethodBalances,
-  FundAddedBreakdown,
-  FundWithdrawnBreakdown,
-  ExternalFundBalanceBreakdown,
-} from './payment.types';
+import type { PaymentMethodBalances } from './payment.types';
 import type { DateRange, DateRangeFilter } from './common.types';

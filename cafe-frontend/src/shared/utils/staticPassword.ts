@@ -4,7 +4,6 @@
  * Single source of truth for:
  * - Login password
  * - Manager password (edit/delete authorization)
- * - Guest mode login
  * - Logout (clears local storage)
  *
  * NOTE: This is not secure and is intended for demo/offline usage.
@@ -13,7 +12,7 @@
 
 import { STORAGE_KEYS } from './constants';
 
-export type StaticUserRole = 'owner' | 'guest';
+export type StaticUserRole = 'owner';
 
 export type StaticUser = {
   id: string;
@@ -46,14 +45,6 @@ export function loginAsOwner(): StaticUser {
   return user;
 }
 
-export function loginAsGuest(): StaticUser {
-  if (typeof window === 'undefined') return { id: 'guest', name: 'Guest', role: 'guest' };
-  const user: StaticUser = { id: 'guest', name: 'Guest', role: 'guest' };
-  localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, 'guest');
-  localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-  return user;
-}
-
 export function logoutAndClearAllStorage(): void {
   if (typeof window === 'undefined') return;
   localStorage.clear();
@@ -61,7 +52,9 @@ export function logoutAndClearAllStorage(): void {
 
 export function isAuthenticated(): boolean {
   if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  if (!token || token === 'guest') return false;
+  return getStoredUser() !== null;
 }
 
 export function getStoredUser(): StaticUser | null {
@@ -71,10 +64,11 @@ export function getStoredUser(): StaticUser | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.role === 'guest') return null;
     return {
       id: String(parsed.id ?? ''),
       name: String(parsed.name ?? 'User'),
-      role: (parsed.role === 'guest' ? 'guest' : 'owner') as StaticUserRole,
+      role: 'owner',
     };
   } catch {
     return null;

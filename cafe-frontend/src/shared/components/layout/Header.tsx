@@ -1,7 +1,6 @@
 import { Menu, Calendar, UserCircle2 } from 'lucide-react';
-import { DemoModeToggle } from '../ui';
 import type { HeaderProps } from './Layout.types';
-import { getStoredUser, getUserDisplayName } from '@/shared/utils';
+import { getUserDisplayName } from '@/shared/utils';
 
 export function Header({ activeTab, onMobileMenuToggle }: HeaderProps) {
   const currentDate = new Date().toLocaleDateString('en-US', {
@@ -13,29 +12,62 @@ export function Header({ activeTab, onMobileMenuToggle }: HeaderProps) {
 
   const getPageTitle = (tab: string) => {
     const titles: Record<string, string> = {
+      // Main
+      dashboard:    'Dashboard',
       daily_record: 'All Records',
+      report:       'Analytics',
+      // Operations
+      daily_expense: 'Daily Expenses',
+      product_cost:  'Product Costs',
+      fixed_cost:    'Fixed Costs',
+      fund:          'Fund Management',
+      // Revenue
+      pos_sync:    'POS Sync',
+      daily_sales: 'Daily Sales',
+      invoices:    'Invoices',
+      // Inventory
+      stock_levels: 'Stock Levels',
+      suppliers:    'Suppliers',
+      wastage:      'Wastage',
+      // Workforce
+      staff_roster: 'Staff Roster',
+      payroll:      'Payroll',
     };
-    return titles[tab] || tab.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    return titles[tab] ?? tab.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
 
   const getPageDescription = (tab: string) => {
     const descriptions: Record<string, string> = {
-      dashboard: 'Overview of key financial metrics and recent activities',
-      daily_record: 'Browse and search all records by date range',
+      // Main
+      // Overview
+      dashboard:    'Overview of key financial metrics and recent activities',
+      report:       'Generate comprehensive financial reports and analytics',
+      // Finance
       daily_expense: 'Track daily operational expenses',
-      product_cost: 'Manage product inventory and variable costs',
-      fixed_cost: 'Monitor recurring fixed expenses',
-      fund: 'Manage fund additions and withdrawals',
-      report: 'Generate comprehensive financial reports'
+      daily_record:  'Browse and search all transaction records by date range',
+      fixed_cost:    'Monitor and manage recurring fixed expenses',
+      fund:          'Manage fund additions and withdrawals',
+      // Inventory
+      product_cost:  'Manage product costs and variable inventory expenses',
+      // Revenue
+      pos_sync:    'Sync and reconcile point-of-sale transactions in real time',
+      daily_sales: 'Track and analyse daily sales performance across all channels',
+      invoices:    'Generate, send, and manage invoices for customers and vendors',
+      // Inventory
+      stock_levels: 'Monitor ingredient and product inventory across all storage locations',
+      suppliers:    'Manage supplier contacts, purchase orders, and delivery schedules',
+      wastage:      'Log and review spoilage and wastage to reduce inventory losses',
+      // Workforce
+      staff_roster: 'Plan and manage employee shifts, schedules, and attendance',
+      payroll:      'Calculate and process staff salaries, bonuses, and deductions',
     };
-    return descriptions[tab] || 'ERP Management System';
+    return descriptions[tab] ?? 'Café ERP Management System';
   };
 
   const userName = getUserDisplayName();
-  const isGuest = getStoredUser()?.role === 'guest';
 
   return (
-    <header className="sticky top-0 z-20 bg-gradient-to-r from-white to-slate-50 border-b border-slate-200 shadow-sm">
+    <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
       <div className="px-4 py-3 md:px-8 md:py-4">
         <div className="flex items-center justify-between">
           {/* Left Section: Title and Description */}
@@ -63,14 +95,13 @@ export function Header({ activeTab, onMobileMenuToggle }: HeaderProps) {
             </div>
           </div>
 
-          {/* Right Section: Date and Status */}
-          <div className="hidden md:flex items-center gap-3">
-            {isGuest && <DemoModeToggle />}
-            <div className="flex items-center gap-2 text-sm text-slate-700 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+          {/* Right Section: Date and User */}
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="hidden md:flex items-center gap-2 text-sm text-slate-700 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
               <UserCircle2 size={18} className="text-slate-400" />
               <span className="font-semibold">{userName}</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-slate-600 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+            <div className="hidden md:flex items-center gap-2 text-sm text-slate-600 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
               <Calendar size={16} className="text-slate-400" />
               <span className="font-medium">{currentDate}</span>
             </div>
@@ -88,7 +119,6 @@ export function Header({ activeTab, onMobileMenuToggle }: HeaderProps) {
               <UserCircle2 size={14} className="text-slate-400" />
               <span className="font-semibold">{userName}</span>
             </div>
-            {isGuest && <DemoModeToggle />}
           </div>
         </div>
       </div>

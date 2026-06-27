@@ -3,12 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Coffee, Lock, ArrowRight, User, Eye, EyeOff } from 'lucide-react';
+import { Coffee, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { ButtonLoading } from '@/shared/components/ui';
 import {
   isAuthenticated,
   formatLoginSuccessMessage,
-  loginAsGuest,
   loginAsOwner,
   loginSchema,
   validateLoginPassword,
@@ -66,16 +65,6 @@ export default function LoginPage() {
       setLoading(false);
       navigate('/dashboard');
     }, 400);
-  };
-
-  const handleGuestMode = () => {
-    try {
-      const user = loginAsGuest();
-      toast.success(formatLoginSuccessMessage(user.name));
-      navigate('/dashboard');
-    } catch {
-      toast.error('Unable to start guest mode');
-    }
   };
 
   return (
@@ -196,20 +185,6 @@ export default function LoginPage() {
                 Sign In <ArrowRight size={20} />
               </ButtonLoading>
             </form>
-
-            <div className="my-8 flex items-center gap-4">
-              <div className="h-px bg-slate-100 flex-1"></div>
-              <span className="text-xs text-slate-400 font-medium">OR CONTINUE WITH</span>
-              <div className="h-px bg-slate-100 flex-1"></div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleGuestMode}
-              className="w-full py-3.5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-300 ease-in-out flex items-center justify-center gap-2"
-            >
-              <User size={20} /> Guest Mode
-            </button>
 
             <p className="mt-8 text-center text-sm text-slate-500">
               Don't have an account?
