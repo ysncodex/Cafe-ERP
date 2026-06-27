@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authService, type User } from '../services/modules';
+import { authService, type User } from '@/core/api/services';
 
 interface UseAuthReturn {
   user: User | null;
