@@ -1,9 +1,5 @@
 import type { ERPStats, Transaction } from '@/core/types';
-import {
-  calculateFundFlow,
-  calculateMonthlyFundGenerated,
-  calculateTotalFundBalance,
-} from '@/shared/utils/calculations';
+import { isPaidSale } from '@/core/types/transaction.types';
 import { calculateDailyAvailableCash, calculatePaymentMethodBalances } from '@/shared/utils/calculations';
 
 export function computeStats(transactions: Transaction[], filteredTransactions: Transaction[]): ERPStats {
@@ -19,43 +15,31 @@ export function computeStats(transactions: Transaction[], filteredTransactions: 
   const productUsage: Record<string, { qty: number; unit: string; cost: number; count: number }> = {};
   const fixedCostAgg: Record<string, number> = {};
 
-  // 1. Calculate comprehensive payment method balances
   const paymentMethods = calculatePaymentMethodBalances(transactions, filteredTransactions);
-  const fundFlow = calculateFundFlow(filteredTransactions);
-  const fundTotal = calculateTotalFundBalance(transactions);
-  const monthlyFundGenerated = calculateMonthlyFundGenerated(transactions);
   const dailyAvailableCash = calculateDailyAvailableCash(transactions);
 
-  // External fund balance (external only): fund_in - fund_out (range-based)
-  const externalFundBalance = {
-    cash: fundFlow.fundAdded.cash - fundFlow.fundWithdrawn.cash,
-    bank: fundFlow.fundAdded.bank - fundFlow.fundWithdrawn.bank,
-    bkash: fundFlow.fundAdded.bkash - fundFlow.fundWithdrawn.bkash,
-    total: fundFlow.fundAdded.total - fundFlow.fundWithdrawn.total,
-  };
-
-  // Net cash movement for selected range: sales - expenses - cash_to_fund
   let netCashInRange = 0;
-  filteredTransactions.forEach(t => {
+  filteredTransactions.forEach((t) => {
     const val = Number(t.amount);
-    if (t.type === 'sale' || t.type === 'sale_adjustment') netCashInRange += val;
-    else if (t.type === 'expense_product' || t.type === 'expense_fixed' || t.type === 'cash_to_fund') {
-      netCashInRange -= val;
-    }
+    if (isPaidSale(t)) netCashInRange += val;
+    else if (t.type === 'sale_adjustment') netCashInRange -= val;
+    else if (t.type === 'expense_product' || t.type === 'expense_fixed') netCashInRange -= val;
   });
 
-  // 2. Calculate Total Available Liquidity (all payment methods)
   const totalLiquidity = paymentMethods.total.balance;
   const cashInHand = paymentMethods.cash.balance;
 
-  // 3. Calculate Stats based on Filtered Date Range
-  filteredTransactions.forEach(t => {
+  filteredTransactions.forEach((t) => {
     const val = Number(t.amount);
 
-    if (t.type === 'sale' || t.type === 'sale_adjustment') {
+    if (isPaidSale(t)) {
       totalSales += val;
       if (t.channel === 'foodpanda') foodpandaSales += val;
       if (t.channel === 'foodi') foodiSales += val;
+    } else if (t.type === 'sale_adjustment') {
+      totalSales -= val;
+      if (t.channel === 'foodpanda') foodpandaSales -= val;
+      if (t.channel === 'foodi') foodiSales -= val;
     }
 
     if (t.type === 'expense_product' || t.type === 'expense_fixed') {
@@ -83,7 +67,7 @@ export function computeStats(transactions: Transaction[], filteredTransactions: 
   });
 
   const recentSales = filteredTransactions
-    .filter(t => t.type === 'sale' || t.type === 'sale_adjustment')
+    .filter((t) => t.type === 'sale')
     .slice(0, 10)
     .reverse()
     .map((t, index) => ({
@@ -102,58 +86,35 @@ export function computeStats(transactions: Transaction[], filteredTransactions: 
     .slice(0, 5);
 
   return {
-    // Sales metrics
     totalSales,
     foodpandaSales,
     foodiSales,
-
-    // Payment method balances and breakdowns
     cashInHand,
     totalLiquidity,
     cashBalance: paymentMethods.cash.balance,
     bankBalance: paymentMethods.bank.balance,
     bkashBalance: paymentMethods.bkash.balance,
     totalBalance: paymentMethods.total.balance,
-
-    // Sales by payment method
     cashSales: paymentMethods.cash.sales,
     bankSales: paymentMethods.bank.sales,
     bkashSales: paymentMethods.bkash.sales,
-
-    // Received amounts (for compatibility)
-    bankReceived: paymentMethods.bank.sales + paymentMethods.bank.fundIn,
-    bkashReceived: paymentMethods.bkash.sales + paymentMethods.bkash.fundIn,
-
-    // Expenses by payment method
+    bankReceived: paymentMethods.bank.sales,
+    bkashReceived: paymentMethods.bkash.sales,
     cashExpenses: paymentMethods.cash.expenses,
     bankExpenses: paymentMethods.bank.expenses,
     bkashExpenses: paymentMethods.bkash.expenses,
-
-    // Fund metrics
-    fundTotal,
-    totalAdded: fundFlow.fundAdded.total,
     totalExpenses,
     totalProductCost,
     totalFixedCost,
-    monthlyFundGenerated,
     dailyAvailableCash,
     netCashInRange,
-    externalFundBalance,
-    fundAdded: fundFlow.fundAdded,
-    fundWithdrawn: fundFlow.fundWithdrawn,
-
-    // Profitability
     profit: totalSales - totalExpenses,
     grossProfit: totalSales - totalProductCost,
-
-    // Categorized data
     expenseCategories,
     productUsage,
     recentSales,
     topProducts,
     topFixed,
-
-    // Payment method details
     paymentMethods,
   };
 }

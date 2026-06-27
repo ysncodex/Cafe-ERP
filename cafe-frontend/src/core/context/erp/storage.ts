@@ -1,4 +1,5 @@
 import type { Transaction } from '@/core/types';
+import { isActiveTransactionType } from '@/core/types/transaction.types';
 
 type PersistedERPState = {
   transactions: (Omit<Transaction, 'date'> & { date: string })[];
@@ -29,6 +30,7 @@ export function loadPersistedERPState(storageKey: string): {
             ...t,
             date: new Date(t.date),
           }))
+          .filter((t): t is Transaction => isActiveTransactionType(String(t.type)))
       : undefined;
 
     return {
